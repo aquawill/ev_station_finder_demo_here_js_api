@@ -26,443 +26,469 @@
 
 <body onresize="resize()">
     <div id="map">
-    <script type="text/javascript" charset="UTF-8">
-        var he_appid = 'KymxRBvsVraBqbxy6gCt';
-        var he_appcode = 'LbNbmVAeiyg51Dbr2C_NOw';
-        var platform = new H.service.Platform({
-            app_id: he_appid
-            , app_code: he_appcode
-            , useHTTPS: true
-            , useCIT: true
-        });
-        var geocoder = platform.getGeocodingService();
-        var router = platform.getRoutingService();
-        var pixelRatio = window.devicePixelRatio || 1;
-        var defaultLayers = platform.createDefaultLayers({
-            tileSize: tile_size
-            , ppi: ppi
-        , });
-        var xmlHttp;
-
-        function httpGet(theUrl) {
-            xmlHttp = new XMLHttpRequest();
-            xmlHttp.open("GET", theUrl, false); // false for synchronous request
-            xmlHttp.send(null);
-            return xmlHttp.responseText;
-        };
-
-        function getURL(URL) {
-            return new Promise(function (resolve, reject) {
-                var req = new XMLHttpRequest();
-                req.open('GET', URL, true);
-                req.onload = function () {
-                    if (req.status === 200) {
-                        resolve(req.responseText);
-                    }
-                    else {
-                        reject(new Error(req.statusText));
-                    }
-                };
-                req.onerror = function () {
-                    reject(new Error(req.statusText));
-                };
-                req.send();
+        <script type="text/javascript" charset="UTF-8">
+            var he_appid = 'KymxRBvsVraBqbxy6gCt';
+            var he_appcode = 'LbNbmVAeiyg51Dbr2C_NOw';
+            var platform = new H.service.Platform({
+                app_id: he_appid
+                , app_code: he_appcode
+                , useHTTPS: true
+                , useCIT: true
             });
-        }
-        var pixelRatio = window.devicePixelRatio || 1;
-        var ppi = pixelRatio === 1 ? 72 : 250
-        var tile_size = pixelRatio === 1 ? 256 : 512
+            var geocoder = platform.getGeocodingService();
+            var router = platform.getRoutingService();
+            var pixelRatio = window.devicePixelRatio || 1;
+            var defaultLayers = platform.createDefaultLayers({
+                tileSize: tile_size
+                , ppi: ppi
+            , });
+            var xmlHttp;
 
-        function switchMapLanguage(map, platform) {
-            var mapTileService = platform.getMapTileService({
-                    type: 'traffic'
-                }), // Our layer will load tiles from the HERE Map Tile API
-                chineseMapLayer = mapTileService.createTileLayer('traffictile', 'normal.day', pixelRatio === 1 ? 256 : 512, 'png8', {
-                    lg: 'cht'
-                    , ppi: ppi
-                    , pois: true
-                });
-            map.setBaseLayer(chineseMapLayer);
-        }
-        var map = new H.Map(document.getElementById('map'), defaultLayers.normal.traffic, {
-            center: {
-                lat: 25.040053
-                , lng: 121.511976
-            }
-            , zoom: 14
-            , pixelRatio: pixelRatio
-        });
-        var behavior = new H.mapevents.Behavior(new H.mapevents.MapEvents(map));
-        switchMapLanguage(map, platform);
-        var ui = H.ui.UI.createDefault(map, defaultLayers);
-        ui.removeControl('mapsettings');
-        var ggr_isoline_group = new H.map.Group()
-            , ggr_marker_group = new H.map.Group()
-            , selected_station_group = new H.map.Group()
-            , ggr_route_group = new H.map.Group();
-        map.addObject(ggr_isoline_group);
-        map.addObject(ggr_marker_group);
-        map.addObject(selected_station_group);
-        map.addObject(ggr_route_group);
-        var bubble;
-
-        function purge_bubble() {
-            if (ui.getBubbles().length > 0) {
-                for (i = 0; ui.getBubbles().length; i++) {
-                    ui.removeBubble(ui.getBubbles()[i]);
-                }
-            }
-        }
-
-        function get_route(ori, dest, ori_name, dest_name) {
-            var routingParameters = {
-                'mode': 'fastest;car;traffic:enabled;motorway:-3'
-                , 'waypoint0': 'geo!' + ori[0] + ',' + ori[1]
-                , 'waypoint1': 'geo!' + dest[0] + ',' + dest[1]
-                , 'representation': 'display'
-                , 'departure': 'now'
-                , 'language': 'zh-TW'
-                , 'consumptionmodel': 'default'
-                , 'routeAttributes': 'summary,shape,legs,waypoints'
+            function httpGet(theUrl) {
+                xmlHttp = new XMLHttpRequest();
+                xmlHttp.open("GET", theUrl, false); // false for synchronous request
+                xmlHttp.send(null);
+                return xmlHttp.responseText;
             };
-            var turn_guides = '<ol>';
-            var route, routeShape, startPoint, endPoint, linestring, maneuvers, legs, summary, ori_bubble_info;
-            var onResult = function (result) {
-                if (result.response) {
-                    if (result.response.route) {
-                        route = result.response.route[0];
-                        legs = route.leg;
-                        for (i = 0; i < legs.length; i++) {
-                            var leg = legs[i];
-                            var maneuvers = leg.maneuver;
-                            for (i = 0; i < maneuvers.length; i++) {
-                                var maneuver = maneuvers[i];
-                                turn_guides += '<li>' + maneuver.instruction + '</li>';
-                            }
+
+            function getURL(URL) {
+                return new Promise(function (resolve, reject) {
+                    var req = new XMLHttpRequest();
+                    req.open('GET', URL, true);
+                    req.onload = function () {
+                        if (req.status === 200) {
+                            resolve(req.responseText);
                         }
-                        turn_guides += '</ol>';
-                        summary = route.summary.text;
-                        bubble.setContent('<span style="color: #EEEEEE; font-size: 14px">所在地：<br>' + ori_name + '<br>最近的GoStation：<br>' + dest_name + '</span><br><span style="color: #EEEEEE; font-size: 12px">' + summary + '</span>');
-                        routeShape = route.shape;
-                        linestring = new H.geo.LineString();
-                        routeShape.forEach(function (point) {
-                            var parts = point.split(',');
-                            linestring.pushLatLngAlt(parts[0], parts[1]);
-                        });
-                        startPoint = route.waypoint[0].mappedPosition;
-                        endPoint = route.waypoint[1].mappedPosition;
-                        routeLine = new H.map.Polyline(linestring, {
-                            style: {
-                                lineWidth: 10
-                            }
-                            , arrows: {
-                                fillColor: 'white'
-                                , frequency: 2
-                                , width: 0.8
-                                , length: 0.7
-                            }
-                        });
-                        routeLine.addEventListener('tap', function () {
-                            ggr_route_group.removeAll();
-                            purge_bubble()
-                        })
-                        var startMarker = new H.map.Marker({
-                            lat: startPoint.latitude
-                            , lng: startPoint.longitude
-                        });
-                        /*
-                        startMarker.addEventListener('tap', function () {
-                            ggr_route_group.removeAll();
-                        });
-                        
-                        var endMarker = new H.map.Marker({
-                            lat: endPoint.latitude
-                            , lng: endPoint.longitude
-                        });
-                        */
-                        ggr_route_group.addObjects([routeLine, startMarker]);
-                        var camera_data = map.getCameraDataForBounds(routeLine.getBounds());
-                        map.setZoom(Math.round(camera_data.zoom - 1), true);
-                        map.setCenter(camera_data.position, true);
-                    }
+                        else {
+                            reject(new Error(req.statusText));
+                        }
+                    };
+                    req.onerror = function () {
+                        reject(new Error(req.statusText));
+                    };
+                    req.send();
+                });
+            }
+            var pixelRatio = window.devicePixelRatio || 1;
+            var ppi = pixelRatio === 1 ? 72 : 250
+            var tile_size = pixelRatio === 1 ? 256 : 512
+
+            function activate_cht_map(map, platform) {
+                var mapTileService = platform.getMapTileService({
+                        type: 'traffic'
+                    }), // Our layer will load tiles from the HERE Map Tile API
+                    chineseMapLayer = mapTileService.createTileLayer('traffictile', 'normal.day', pixelRatio === 1 ? 256 : 512, 'png8', {
+                        lg: 'cht'
+                        , ppi: ppi
+                        , pois: true
+                    });
+                map.setBaseLayer(chineseMapLayer);
+            }
+            var map = new H.Map(document.getElementById('map'), defaultLayers.normal.traffic, {
+                center: {
+                    lat: 25.040053
+                    , lng: 121.511976
                 }
-                else {
-                    bubble.setContent('<span style="color: #EEEEEE; font-size: 14px">所在地：<br>' + ori_name + '</span><br><span style="color: #EEEEEE; font-size: 12px">此地點可能不在GoStation服務範圍內，或位在Gogoro無法行駛的區域。</span>');
-                }
-            };
-            router.calculateRoute(routingParameters, onResult, function (error) {
-                console.log(error);
+                , zoom: 14
+                , pixelRatio: pixelRatio
             });
-        }
-
-        function nearest_station_checker(input_loc, input_name) {
-            var gfe_url = 'https://cle.cit.api.here.com/2/search/proximity.json?layer_ids=GGR_COVERAGE_180815&proximity=' + input_loc[0] + ',' + input_loc[1] + '&app_id=' + he_appid + '&app_code=' + he_appcode;
-            var gfe_result = JSON.parse(httpGet(gfe_url));
-            var gfe_station_list = [];
-            if (gfe_result["geometries"].length > 0) {
-                for (i = 0; i < gfe_result["geometries"].length; i++) {
-                    gfe_station_list.push(gfe_result["geometries"][i]["attributes"]);
-                }
-                var result_list = [];
-                for (i = 0; i < gfe_station_list.length; i++) {
-                    var id = gfe_station_list[i]['ID'];
-                    var name = gfe_station_list[i]['NAME'];
-                    var addr = gfe_station_list[i]['ADDR'];
-                    var lat = gfe_station_list[i]['LATLON'].split(',')[0];
-                    var lng = gfe_station_list[i]['LATLON'].split(',')[1];
-                    var station_latlon = [lat, lng];
-                    var station_point = new H.geo.Point(station_latlon[0], station_latlon[1]);
-                    var input_point = new H.geo.Point(input_loc[0], input_loc[1]);
-                    var d = station_point.distance(input_point);
-                    result_list.push([id, name, addr, station_latlon[0] + "," + station_latlon[1], d]);
-                }
-
-                function sort_gfe_result(a, b) {
-                    if (a[0] === b[0]) {
-                        return 0;
+            var behavior = new H.mapevents.Behavior(new H.mapevents.MapEvents(map));
+            navigator.geolocation.getCurrentPosition(function (location) {
+                var gps_location_marker = new H.map.Circle({
+                    lat: location.coords.latitude
+                    , lng: location.coords.longitude
+                }, 5, {
+                    style: {
+                        strokeColor: 'rgba(245, 117, 249, 0.3)'
+                        , lineWidth: 1
+                        , fillColor: 'rgba(184, 197, 252, 0.5)'
                     }
-                    return (a[4] < b[4]) ? 1 : -1;
+                });
+                var gps_location_marker_radius = new H.map.Circle({
+                    lat: location.coords.latitude
+                    , lng: location.coords.longitude
+                }, location.coords.accuracy, {
+                    style: {
+                        strokeColor: 'rgba(245, 117, 249, 0.3)'
+                        , lineWidth: 1
+                        , fillColor: 'rgba(250, 184, 252, 0.3)'
+                    }
+                });
+                gps_location_marker_radius.setZIndex(0);
+                gps_location_marker.setZIndex(10);
+                map.addObject(gps_location_marker_radius);
+                map.addObject(gps_location_marker);
+                map.setCenter({
+                    lat: location.coords.latitude
+                    , lng: location.coords.longitude
+                });
+                rev_geocoder({
+                    lat: location.coords.latitude
+                    , lng: location.coords.longitude
+                });
+            });
+            activate_cht_map(map, platform);
+            var ui = H.ui.UI.createDefault(map, defaultLayers);
+            ui.removeControl('mapsettings');
+            var ggr_isoline_group = new H.map.Group()
+                , ggr_marker_group = new H.map.Group()
+                , selected_station_group = new H.map.Group()
+                , ggr_route_group = new H.map.Group();
+            map.addObject(ggr_isoline_group);
+            map.addObject(ggr_marker_group);
+            map.addObject(selected_station_group);
+            map.addObject(ggr_route_group);
+            var bubble;
+
+            function purge_bubble() {
+                if (ui.getBubbles().length > 0) {
+                    for (i = 0; ui.getBubbles().length; i++) {
+                        ui.removeBubble(ui.getBubbles()[i]);
+                    }
                 }
-                result_list.sort(sort_gfe_result).reverse();
-                var here_matrix_url = 'https://matrix.route.api.here.com/routing/7.2/calculatematrix.json?mode=fastest;car;traffic:enabled;motorway:-3&app_id=' + he_appid + '&app_code=' + he_appcode + '&start0=' + input_loc[0] + ',' + input_loc[1] + '&consumptionmodel=default'
-                var candidate_list_length;
-                if (result_list.length > 0) {}
-                if (result_list.length > 5) {
-                    candidate_list_length = 5
-                }
-                else {
-                    candidate_list_length = result_list.length
-                }
-                for (i = 0; i < candidate_list_length; i++) {
-                    var dest_input = '&destination' + i + '=' + result_list[i][3].split(',')[0] + ',' + result_list[i][3].split(',')[1];
-                    here_matrix_url += dest_input;
-                }
-                var matrix_result = JSON.parse(httpGet(here_matrix_url));
-                var closest_dest_list = [];
-                for (i = 0; i < matrix_result["response"]["matrixEntry"].length; i++) {
-                    var matrix_entity = matrix_result["response"]["matrixEntry"][i];
-                    var destination_index = matrix_result["response"]["matrixEntry"][i]["destinationIndex"];
-                    var cost_factor;
-                    if (matrix_result["response"]["matrixEntry"][i]["status"] != 'failed') {
-                        cost_factor = matrix_result["response"]["matrixEntry"][i]["summary"]["costFactor"];
+            }
+
+            function get_route(ori, dest, ori_name, dest_name) {
+                var routingParameters = {
+                    'mode': 'fastest;car;traffic:enabled;motorway:-3'
+                    , 'waypoint0': 'geo!' + ori[0] + ',' + ori[1]
+                    , 'waypoint1': 'geo!' + dest[0] + ',' + dest[1]
+                    , 'representation': 'display'
+                    , 'departure': 'now'
+                    , 'language': 'zh-TW'
+                    , 'consumptionmodel': 'default'
+                    , 'routeAttributes': 'summary,shape,legs,waypoints'
+                };
+                var turn_guides = '<ol>';
+                var route, routeShape, startPoint, endPoint, linestring, maneuvers, legs, summary, ori_bubble_info;
+                var onResult = function (result) {
+                    if (result.response) {
+                        if (result.response.route) {
+                            route = result.response.route[0];
+                            legs = route.leg;
+                            for (i = 0; i < legs.length; i++) {
+                                var leg = legs[i];
+                                var maneuvers = leg.maneuver;
+                                for (i = 0; i < maneuvers.length; i++) {
+                                    var maneuver = maneuvers[i];
+                                    turn_guides += '<li>' + maneuver.instruction + '</li>';
+                                }
+                            }
+                            turn_guides += '</ol>';
+                            summary = route.summary.text;
+                            bubble.setContent('<span style="color: #EEEEEE; font-size: 14px">所在地：<br>' + ori_name + '<br>最近的GoStation：<br>' + dest_name + '</span><br><span style="color: #EEEEEE; font-size: 12px">' + summary + '</span>');
+                            routeShape = route.shape;
+                            linestring = new H.geo.LineString();
+                            routeShape.forEach(function (point) {
+                                var parts = point.split(',');
+                                linestring.pushLatLngAlt(parts[0], parts[1]);
+                            });
+                            startPoint = route.waypoint[0].mappedPosition;
+                            endPoint = route.waypoint[1].mappedPosition;
+                            routeLine = new H.map.Polyline(linestring, {
+                                style: {
+                                    lineWidth: 10
+                                }
+                                , arrows: {
+                                    fillColor: 'white'
+                                    , frequency: 2
+                                    , width: 0.8
+                                    , length: 0.7
+                                }
+                            });
+                            routeLine.setZIndex(20);
+                            routeLine.addEventListener('tap', function () {
+                                ggr_route_group.removeAll();
+                                purge_bubble()
+                            })
+                            var startMarker = new H.map.Marker({
+                                lat: startPoint.latitude
+                                , lng: startPoint.longitude
+                            });
+                            /*
+                            startMarker.addEventListener('tap', function () {
+                                ggr_route_group.removeAll();
+                            });
+                        
+                            var endMarker = new H.map.Marker({
+                                lat: endPoint.latitude
+                                , lng: endPoint.longitude
+                            });
+                            */
+                            ggr_route_group.addObjects([routeLine, startMarker]);
+                            var camera_data = map.getCameraDataForBounds(routeLine.getBounds());
+                            map.setZoom(Math.round(camera_data.zoom - 1), true);
+                            map.setCenter(camera_data.position, true);
+                        }
                     }
                     else {
-                        cost_factor = 0
+                        bubble.setContent('<span style="color: #EEEEEE; font-size: 14px">所在地：<br>' + ori_name + '</span><br><span style="color: #EEEEEE; font-size: 12px">此地點可能不在GoStation服務範圍內，或位在Gogoro無法行駛的區域。</span>');
                     }
-                    closest_dest_list.push([destination_index, cost_factor]);
-                }
+                };
+                router.calculateRoute(routingParameters, onResult, function (error) {
+                    console.log(error);
+                });
+            }
 
-                function sort_matrix_cunction(a, b) {
-                    if (a[0] === b[0]) {
-                        return 0;
+            function nearest_station_checker(input_loc, input_name) {
+                var gfe_url = 'https://cle.cit.api.here.com/2/search/proximity.json?layer_ids=GGR_COVERAGE_180815&proximity=' + input_loc[0] + ',' + input_loc[1] + '&app_id=' + he_appid + '&app_code=' + he_appcode;
+                var gfe_result = JSON.parse(httpGet(gfe_url));
+                var gfe_station_list = [];
+                if (gfe_result["geometries"].length > 0) {
+                    for (i = 0; i < gfe_result["geometries"].length; i++) {
+                        gfe_station_list.push(gfe_result["geometries"][i]["attributes"]);
                     }
-                    return (a[1] < b[1]) ? 1 : -1;
-                }
-                closest_dest_list.sort(sort_matrix_cunction).reverse();
-                var closest_dest_index = closest_dest_list[0][0];
-                var closest_dest = result_list[closest_dest_index];
-                var route_result = get_route(input_loc, closest_dest[3].split(','), input_name, closest_dest[1]);
-                return [closest_dest, route_result];
-            }
-            else {
-                ggr_route_group.removeAll();
-                return null;
-            }
-        }
+                    var result_list = [];
+                    for (i = 0; i < gfe_station_list.length; i++) {
+                        var id = gfe_station_list[i]['ID'];
+                        var name = gfe_station_list[i]['NAME'];
+                        var addr = gfe_station_list[i]['ADDR'];
+                        var lat = gfe_station_list[i]['LATLON'].split(',')[0];
+                        var lng = gfe_station_list[i]['LATLON'].split(',')[1];
+                        var station_latlon = [lat, lng];
+                        var station_point = new H.geo.Point(station_latlon[0], station_latlon[1]);
+                        var input_point = new H.geo.Point(input_loc[0], input_loc[1]);
+                        var d = station_point.distance(input_point);
+                        result_list.push([id, name, addr, station_latlon[0] + "," + station_latlon[1], d]);
+                    }
 
-        function show_revgeocode_result(result) {
-            var location = result.Response.View[0].Result[0];
-            var closest_dest = nearest_station_checker([location.Location.DisplayPosition.Latitude, location.Location.DisplayPosition.Longitude], location.Location.Address.Label)
-            if (closest_dest) {
-                bubble = new H.ui.InfoBubble({
-                    lat: location.Location.DisplayPosition.Latitude
-                    , lng: location.Location.DisplayPosition.Longitude
-                }, {
-                    content: '<p><span style="color: #EEEEEE; font-size: 14px">所在地：' + location.Location.Address.Label + '</p></span>'
-                });
-                ui.addBubble(bubble);
-                /*
-                map.setCenter({
-                    lat: location.Location.DisplayPosition.Latitude
-                    , lng: location.Location.DisplayPosition.Longitude
-                });
-                */
-            }
-            else {
-                bubble = new H.ui.InfoBubble({
-                    lat: location.Location.DisplayPosition.Latitude
-                    , lng: location.Location.DisplayPosition.Longitude
-                }, {
-                    content: '<span style="color: #EEEEEE; font-size: 14px">所在地：<br>' + location.Location.Address.Label + '</span><br><span style="color: #EEEEEE; font-size: 12px">此地點可能不在GoStation服務範圍內，或位在Gogoro無法行駛的區域。</span>'
-                });
-                ui.addBubble(bubble);
-            }
-        };
+                    function sort_gfe_result(a, b) {
+                        if (a[0] === b[0]) {
+                            return 0;
+                        }
+                        return (a[4] < b[4]) ? 1 : -1;
+                    }
+                    result_list.sort(sort_gfe_result).reverse();
+                    var here_matrix_url = 'https://matrix.route.api.here.com/routing/7.2/calculatematrix.json?mode=fastest;car;traffic:enabled;motorway:-3&app_id=' + he_appid + '&app_code=' + he_appcode + '&start0=' + input_loc[0] + ',' + input_loc[1] + '&consumptionmodel=default'
+                    var candidate_list_length;
+                    if (result_list.length > 0) {}
+                    if (result_list.length > 5) {
+                        candidate_list_length = 5
+                    }
+                    else {
+                        candidate_list_length = result_list.length
+                    }
+                    for (i = 0; i < candidate_list_length; i++) {
+                        var dest_input = '&destination' + i + '=' + result_list[i][3].split(',')[0] + ',' + result_list[i][3].split(',')[1];
+                        here_matrix_url += dest_input;
+                    }
+                    var matrix_result = JSON.parse(httpGet(here_matrix_url));
+                    var closest_dest_list = [];
+                    for (i = 0; i < matrix_result["response"]["matrixEntry"].length; i++) {
+                        var matrix_entity = matrix_result["response"]["matrixEntry"][i];
+                        var destination_index = matrix_result["response"]["matrixEntry"][i]["destinationIndex"];
+                        var cost_factor;
+                        if (matrix_result["response"]["matrixEntry"][i]["status"] != 'failed') {
+                            cost_factor = matrix_result["response"]["matrixEntry"][i]["summary"]["costFactor"];
+                        }
+                        else {
+                            cost_factor = 0
+                        }
+                        closest_dest_list.push([destination_index, cost_factor]);
+                    }
 
-        function rev_geocoder(loc) {
-            var reverseGeocodingParameters = {
-                prox: loc.lat + ',' + loc.lng + ',100'
-                , mode: 'retrieveAddresses'
-                , maxresults: 1
-            };
-            geocoder.reverseGeocode(reverseGeocodingParameters, show_revgeocode_result, function (e) {
-                alert(e);
-            });
-        }
-        map.addEventListener('contextmenu', function (evt) {
-            ggr_route_group.removeAll();
-            purge_bubble();
-            var coord = map.screenToGeo(evt.viewportX, evt.viewportY);
-            rev_geocoder(coord);
-        })
-        var cleService = platform.getCustomLocationService();
-        var ggr_gostations = new H.service.extension.customLocation.TileProvider(cleService, {
-            layerId: 'GGR_COVERAGE_180815'
-        }, {
-            resultType: H.service.extension.TileProvider.ResultType.POLYGON
-            , min: 10
-        });
-        /*
-        var ggr_layer = new H.map.layer.TileLayer(ggr_gostations, {
-            opacity: 0.2
-        });
-        map.addLayer(ggr_layer);
-        */
-        function img_icon(url, center) {
-            var icon_object = new H.map.Icon(url, {
-                anchor: {
-                    x: center
-                    , y: center
+                    function sort_matrix_cunction(a, b) {
+                        if (a[0] === b[0]) {
+                            return 0;
+                        }
+                        return (a[1] < b[1]) ? 1 : -1;
+                    }
+                    closest_dest_list.sort(sort_matrix_cunction).reverse();
+                    var closest_dest_index = closest_dest_list[0][0];
+                    var closest_dest = result_list[closest_dest_index];
+                    var route_result = get_route(input_loc, closest_dest[3].split(','), input_name, closest_dest[1]);
+                    return [closest_dest, route_result];
                 }
-            });
-            return icon_object;
-        }
+                else {
+                    ggr_route_group.removeAll();
+                    return null;
+                }
+            }
 
-        function select_station(evt) {
-            if (ui.getBubbles().length > 0) {
-                for (i = 0; i < ui.getBubbles().length; i++) {
-                    ui.removeBubble(ui.getBubbles()[i]);
-                }
-            }
-            /*
-            if (ggr_isoline_group.getObjects().length > 0) {
-                for (i = 0; i < ggr_isoline_group.getObjects().length; i++) {
-                    ggr_isoline_group.removeObject(ggr_isoline_group.getObjects()[i]);
-                }
-            }
-            */
-            selected_station_group.removeAll();
-            ggr_isoline_group.removeAll();
-            if (ggr_route_group.getObjects().length == 0) {
-                var isoline_wkt = evt.target.getData().geometry
-                    , isoline_geometry = H.util.wkt.toGeometry(isoline_wkt)
-                    , isoline_polygon = new H.map.Polygon(isoline_geometry);
-                isoline_polygon.addEventListener('tap', function (e) {
-                    ggr_marker_group.setVisibility(true);
-                    selected_station_group.removeAll();
-                    ggr_isoline_group.removeAll();
-                });
-                ggr_isoline_group.addObject(isoline_polygon);
-                selected_ggr_station_marker = new H.map.Marker({
-                    lat: evt.target.getData().lat
-                    , lng: evt.target.getData().lng
-                }, {
-                    icon: img_icon('https://c2.staticflickr.com/2/1870/44310871342_e66010b647_o.png', 16)
-                , });
-                selected_ggr_station_marker.addEventListener('tap', selectedMarkerOnClick);
-                selected_station_group.addObject(selected_ggr_station_marker);
-                ggr_marker_group.setVisibility(false);
-                map.setViewBounds(isoline_polygon.getBounds());
-            }
-            /*
-            for (i = 0; i < ggr_marker_group.getObjects().length; i++) {
-                ggr_marker_group.getObjects()[i].setIcon(img_icon('/img/power_16.png', 8))
-            }
-            */
-            var bubble = new H.ui.InfoBubble(evt.target.getPosition(), {
-                content: evt.target.getData().html
-            });
-            ui.addBubble(bubble);
-        }
-
-        function selectedMarkerOnClick(e) {
-            if (ui.getBubbles().length > 0) {
-                for (i = 0; i < ui.getBubbles().length; i++) {
-                    ui.removeBubble(ui.getBubbles()[i]);
-                }
-            }
-            ggr_marker_group.setVisibility(true);
-            selected_station_group.removeAll();
-            ggr_isoline_group.removeAll();
-        };
-        var ggr_points = cleService.request(H.service.extension.customLocation.Service.EntryPoint.SEARCH_ALL, H.service.extension.customLocation.Service.EntryPointType.JSON, {
-                layer_id: 'GGR_COVERAGE_180815'
-            }, function (value) {
-                var geometries = value.geometries;
-                for (i = 0; i < geometries.length; i++) {
-                    var latlon = geometries[i].attributes.LATLON
-                        , lat = latlon.split(',')[0]
-                        , lng = latlon.split(',')[1]
-                        , name = lon = geometries[i].attributes.NAME
-                        , addr = geometries[i].attributes.ADDR
-                        , id = geometries[i].attributes.ID
-                        , wkt = geometries[i].geometry
-                        , ggr_station_marker = new H.map.Marker({
-                            lat: lat
-                            , lng: lng
-                        }, {
-                            icon: img_icon('https://c2.staticflickr.com/2/1870/44310871342_e66010b647_o.png', 16)
-                        , });
-                    ggr_station_marker.setData({
-                        html: '<h4>' + name + '</h4><p><span style="color: #999999; font-size: 14px">' + addr + '</p>'
-                        , geometry: wkt
-                        , lat: lat
-                        , lng: lng
+            function show_revgeocode_result(result) {
+                var location = result.Response.View[0].Result[0];
+                var closest_dest = nearest_station_checker([location.Location.DisplayPosition.Latitude, location.Location.DisplayPosition.Longitude], location.Location.Address.Label)
+                if (closest_dest) {
+                    bubble = new H.ui.InfoBubble({
+                        lat: location.Location.DisplayPosition.Latitude
+                        , lng: location.Location.DisplayPosition.Longitude
+                    }, {
+                        content: '<p><span style="color: #EEEEEE; font-size: 14px">所在地：' + location.Location.Address.Label + '</p></span>'
                     });
-                    ggr_marker_group.addObject(ggr_station_marker);
-                    ggr_station_marker.addEventListener('tap', select_station, false);
+                    ui.addBubble(bubble);
+                    /*
+                    map.setCenter({
+                        lat: location.Location.DisplayPosition.Latitude
+                        , lng: location.Location.DisplayPosition.Longitude
+                    });
+                    */
                 }
-            }, function () {
-                console.log('cle request error');
+                else {
+                    bubble = new H.ui.InfoBubble({
+                        lat: location.Location.DisplayPosition.Latitude
+                        , lng: location.Location.DisplayPosition.Longitude
+                    }, {
+                        content: '<span style="color: #EEEEEE; font-size: 14px">所在地：<br>' + location.Location.Address.Label + '</span><br><span style="color: #EEEEEE; font-size: 12px">此地點可能不在GoStation服務範圍內，或位在Gogoro無法行駛的區域。</span>'
+                    });
+                    ui.addBubble(bubble);
+                }
+            };
+
+            function rev_geocoder(loc) {
+                var reverseGeocodingParameters = {
+                    prox: loc.lat + ',' + loc.lng + ',100'
+                    , mode: 'retrieveAddresses'
+                    , maxresults: 1
+                };
+                geocoder.reverseGeocode(reverseGeocodingParameters, show_revgeocode_result, function (e) {
+                    alert(e);
+                });
+            }
+            map.addEventListener('contextmenu', function (evt) {
+                ggr_route_group.removeAll();
+                purge_bubble();
+                var coord = map.screenToGeo(evt.viewportX, evt.viewportY);
+                rev_geocoder(coord);
             })
-            //map.addEventListener('tap', selectedMarkerOnClick)
-        function resize() {
-            var view_port = map.getViewPort();
-            view_port.resize();
-        }
-        var bounds = new H.geo.Rect(26.3841, 117.9841, 21.8967, 122.0069);
-        map.getViewModel().addEventListener('sync', function () {
-            var center = map.getCenter();
-            if (!bounds.containsPoint(center)) {
-                if (center.lat > bounds.getTop()) {
-                    center.lat = bounds.getTop();
-                }
-                else if (center.lat < bounds.getBottom()) {
-                    center.lat = bounds.getBottom();
-                }
-                if (center.lng < bounds.getLeft()) {
-                    center.lng = bounds.getLeft();
-                }
-                else if (center.lng > bounds.getRight()) {
-                    center.lng = bounds.getRight();
-                }
-                map.setCenter(center);
-            }
-            if (map.getZoom() < 8) {
-                map.setZoom(8);
-            }
-        });
-        navigator.geolocation.getCurrentPosition(function (location) {
-            map.setCenter({
-                lat: location.coords.latitude
-                , lng: location.coords.longitude
+            var cleService = platform.getCustomLocationService();
+            var ggr_gostations = new H.service.extension.customLocation.TileProvider(cleService, {
+                layerId: 'GGR_COVERAGE_180815'
+            }, {
+                resultType: H.service.extension.TileProvider.ResultType.POLYGON
+                , min: 10
             });
-            rev_geocoder({
-                lat: location.coords.latitude
-                , lng: location.coords.longitude
+            /*
+            var ggr_layer = new H.map.layer.TileLayer(ggr_gostations, {
+                opacity: 0.2
             });
-        });
-    </script>
+            map.addLayer(ggr_layer);
+            */
+            function img_icon(url, center) {
+                var icon_object = new H.map.Icon(url, {
+                    anchor: {
+                        x: center
+                        , y: center
+                    }
+                });
+                return icon_object;
+            }
+
+            function select_station(evt) {
+                if (ui.getBubbles().length > 0) {
+                    for (i = 0; i < ui.getBubbles().length; i++) {
+                        ui.removeBubble(ui.getBubbles()[i]);
+                    }
+                }
+                /*
+                if (ggr_isoline_group.getObjects().length > 0) {
+                    for (i = 0; i < ggr_isoline_group.getObjects().length; i++) {
+                        ggr_isoline_group.removeObject(ggr_isoline_group.getObjects()[i]);
+                    }
+                }
+                */
+                selected_station_group.removeAll();
+                ggr_isoline_group.removeAll();
+                if (ggr_route_group.getObjects().length == 0) {
+                    var isoline_wkt = evt.target.getData().geometry
+                        , isoline_geometry = H.util.wkt.toGeometry(isoline_wkt)
+                        , isoline_polygon = new H.map.Polygon(isoline_geometry);
+                    isoline_polygon.addEventListener('tap', function (e) {
+                        ggr_marker_group.setVisibility(true);
+                        selected_station_group.removeAll();
+                        ggr_isoline_group.removeAll();
+                    });
+                    ggr_isoline_group.addObject(isoline_polygon);
+                    selected_ggr_station_marker = new H.map.Marker({
+                        lat: evt.target.getData().lat
+                        , lng: evt.target.getData().lng
+                    }, {
+                        icon: img_icon('<img src="https://c2.staticflickr.com/2/1870/44310871342_e66010b647_o.png" />', 16)
+                    , });
+                    selected_ggr_station_marker.addEventListener('tap', selectedMarkerOnClick);
+                    selected_station_group.addObject(selected_ggr_station_marker);
+                    ggr_marker_group.setVisibility(false);
+                    map.setViewBounds(isoline_polygon.getBounds());
+                }
+                /*
+                for (i = 0; i < ggr_marker_group.getObjects().length; i++) {
+                    ggr_marker_group.getObjects()[i].setIcon(img_icon('/img/power_16.png', 8))
+                }
+                */
+                var bubble = new H.ui.InfoBubble(evt.target.getPosition(), {
+                    content: evt.target.getData().html
+                });
+                ui.addBubble(bubble);
+            }
+
+            function selectedMarkerOnClick(e) {
+                if (ui.getBubbles().length > 0) {
+                    for (i = 0; i < ui.getBubbles().length; i++) {
+                        ui.removeBubble(ui.getBubbles()[i]);
+                    }
+                }
+                ggr_marker_group.setVisibility(true);
+                selected_station_group.removeAll();
+                ggr_isoline_group.removeAll();
+            };
+            var ggr_points = cleService.request(H.service.extension.customLocation.Service.EntryPoint.SEARCH_ALL, H.service.extension.customLocation.Service.EntryPointType.JSON, {
+                    layer_id: 'GGR_COVERAGE_180815'
+                }, function (value) {
+                    var geometries = value.geometries;
+                    for (i = 0; i < geometries.length; i++) {
+                        var latlon = geometries[i].attributes.LATLON
+                            , lat = latlon.split(',')[0]
+                            , lng = latlon.split(',')[1]
+                            , name = lon = geometries[i].attributes.NAME
+                            , addr = geometries[i].attributes.ADDR
+                            , id = geometries[i].attributes.ID
+                            , wkt = geometries[i].geometry
+                            , ggr_station_marker = new H.map.Marker({
+                                lat: lat
+                                , lng: lng
+                            }, {
+                                icon: img_icon('/img/power.png', 16)
+                            , });
+                        ggr_station_marker.setData({
+                            html: '<h4>' + name + '</h4><p><span style="color: #999999; font-size: 14px">' + addr + '</p>'
+                            , geometry: wkt
+                            , lat: lat
+                            , lng: lng
+                        });
+                        ggr_marker_group.addObject(ggr_station_marker);
+                        ggr_station_marker.addEventListener('tap', select_station, false);
+                    }
+                }, function () {
+                    console.log('cle request error');
+                })
+                //map.addEventListener('tap', selectedMarkerOnClick)
+            function resize() {
+                var view_port = map.getViewPort();
+                view_port.resize();
+            }
+            var bounds = new H.geo.Rect(26.3841, 117.9841, 21.8967, 122.0069);
+            map.getViewModel().addEventListener('sync', function () {
+                var center = map.getCenter();
+                if (!bounds.containsPoint(center)) {
+                    if (center.lat > bounds.getTop()) {
+                        center.lat = bounds.getTop();
+                    }
+                    else if (center.lat < bounds.getBottom()) {
+                        center.lat = bounds.getBottom();
+                    }
+                    if (center.lng < bounds.getLeft()) {
+                        center.lng = bounds.getLeft();
+                    }
+                    else if (center.lng > bounds.getRight()) {
+                        center.lng = bounds.getRight();
+                    }
+                    map.setCenter(center);
+                }
+                if (map.getZoom() < 8) {
+                    map.setZoom(8);
+                }
+            });
+        </script>
+    </div>
 </body>
 
 </html>
