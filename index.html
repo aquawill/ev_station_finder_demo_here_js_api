@@ -316,12 +316,6 @@
                         content: '<p><span style="color: #EEEEEE; font-size: 14px">所在地：' + location.Location.Address.Label + '</p></span>'
                     });
                     ui.addBubble(bubble);
-                    /*
-                    map.setCenter({
-                        lat: location.Location.DisplayPosition.Latitude
-                        , lng: location.Location.DisplayPosition.Longitude
-                    });
-                    */
                 }
                 else {
                     bubble = new H.ui.InfoBubble({
@@ -379,13 +373,6 @@
                         ui.removeBubble(ui.getBubbles()[i]);
                     }
                 }
-                /*
-                if (ggr_isoline_group.getObjects().length > 0) {
-                    for (i = 0; i < ggr_isoline_group.getObjects().length; i++) {
-                        ggr_isoline_group.removeObject(ggr_isoline_group.getObjects()[i]);
-                    }
-                }
-                */
                 selected_station_group.removeAll();
                 ggr_isoline_group.removeAll();
                 if (ggr_route_group.getObjects().length == 0) {
@@ -402,7 +389,7 @@
                         lat: evt.target.getData().lat
                         , lng: evt.target.getData().lng
                     }, {
-                        icon: img_icon('<img src="https://c2.staticflickr.com/2/1870/44310871342_e66010b647_o.png" />', 16)
+                        icon: img_icon('https://c2.staticflickr.com/2/1870/44310871342_e66010b647_o.png', 16)
                     , });
                     selected_ggr_station_marker.addEventListener('tap', selectedMarkerOnClick);
                     selected_station_group.addObject(selected_ggr_station_marker);
@@ -446,7 +433,7 @@
                                 lat: lat
                                 , lng: lng
                             }, {
-                                icon: img_icon('/img/power.png', 16)
+                                icon: img_icon('https://c2.staticflickr.com/2/1870/44310871342_e66010b647_o.png', 16)
                             , });
                         ggr_station_marker.setData({
                             html: '<h4>' + name + '</h4><p><span style="color: #999999; font-size: 14px">' + addr + '</p>'
