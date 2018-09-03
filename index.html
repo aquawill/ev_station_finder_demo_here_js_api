@@ -25,6 +25,11 @@
 </head>
 
 <body onresize="resize()">
+    <div id="searchbar" style=" position: absolute; top: 20px; z-index: 1000; left: 20px; ">
+        <input id="geocoder_box" type="text" style="font-size: 16px;" placeholder="搜尋行政區、道路、地址或在地圖上按右鍵" maxlength="50" size="40">
+        <script>
+        </script>
+    </div>
     <div id="map">
         <script type="text/javascript" charset="UTF-8">
             var he_appid = 'KymxRBvsVraBqbxy6gCt';
@@ -42,6 +47,27 @@
                 tileSize: tile_size
                 , ppi: ppi
             , });
+            document.getElementById('searchbar').addEventListener('keypress', onSearch)
+
+            function onSearch(e) {
+                var keyCode = null;
+                if (e.which) {
+                    keyCode = e.which;
+                }
+                else if (e.keyCode) {
+                    keyCode = e.keyCode;
+                }
+                if (keyCode == 13) {
+                    var geocoder_string = e.srcElement.value;
+                    var geocodingParams = {
+                        searchText: geocoder_string
+                        , country: 'TWN'
+                    };
+                    geocoder.geocode(geocodingParams, show_geocode_result, function (e) {
+                        console.log(e);
+                    });
+                }
+            }
             var xmlHttp;
 
             function httpGet(theUrl) {
@@ -76,8 +102,8 @@
             function activate_cht_map(map, platform) {
                 var mapTileService = platform.getMapTileService({
                         type: 'traffic'
-                    }), // Our layer will load tiles from the HERE Map Tile API
-                    chineseMapLayer = mapTileService.createTileLayer('traffictile', 'normal.day', pixelRatio === 1 ? 256 : 512, 'png8', {
+                    })
+                    , chineseMapLayer = mapTileService.createTileLayer('traffictile', 'normal.day', pixelRatio === 1 ? 256 : 512, 'png8', {
                         lg: 'cht'
                         , ppi: ppi
                         , pois: true
@@ -305,26 +331,32 @@
                 }
             }
 
-            function show_revgeocode_result(result) {
-                var location = result.Response.View[0].Result[0];
-                var closest_dest = nearest_station_checker([location.Location.DisplayPosition.Latitude, location.Location.DisplayPosition.Longitude], location.Location.Address.Label)
-                if (closest_dest) {
-                    bubble = new H.ui.InfoBubble({
-                        lat: location.Location.DisplayPosition.Latitude
-                        , lng: location.Location.DisplayPosition.Longitude
-                    }, {
-                        content: '<p><span style="color: #EEEEEE; font-size: 14px">所在地：' + location.Location.Address.Label + '</p></span>'
-                    });
-                    ui.addBubble(bubble);
+            function show_geocode_result(result) {
+                console.log(result);
+                if (result.Response.View.length > 0) {
+                    var location = result.Response.View[0].Result[0];
+                    var closest_dest = nearest_station_checker([location.Location.DisplayPosition.Latitude, location.Location.DisplayPosition.Longitude], location.Location.Address.Label)
+                    if (closest_dest) {
+                        bubble = new H.ui.InfoBubble({
+                            lat: location.Location.DisplayPosition.Latitude
+                            , lng: location.Location.DisplayPosition.Longitude
+                        }, {
+                            content: '<p><span style="color: #EEEEEE; font-size: 14px">所在地：' + location.Location.Address.Label + '</p></span>'
+                        });
+                        ui.addBubble(bubble);
+                    }
+                    else {
+                        bubble = new H.ui.InfoBubble({
+                            lat: location.Location.DisplayPosition.Latitude
+                            , lng: location.Location.DisplayPosition.Longitude
+                        }, {
+                            content: '<span style="color: #EEEEEE; font-size: 14px">所在地：<br>' + location.Location.Address.Label + '</span><br><span style="color: #EEEEEE; font-size: 12px">此地點可能不在GoStation服務範圍內，或位在Gogoro無法行駛的區域。</span>'
+                        });
+                        ui.addBubble(bubble);
+                    }
                 }
                 else {
-                    bubble = new H.ui.InfoBubble({
-                        lat: location.Location.DisplayPosition.Latitude
-                        , lng: location.Location.DisplayPosition.Longitude
-                    }, {
-                        content: '<span style="color: #EEEEEE; font-size: 14px">所在地：<br>' + location.Location.Address.Label + '</span><br><span style="color: #EEEEEE; font-size: 12px">此地點可能不在GoStation服務範圍內，或位在Gogoro無法行駛的區域。</span>'
-                    });
-                    ui.addBubble(bubble);
+                    window.alert('查無此地址資料，請再次嘗試。');
                 }
             };
 
@@ -334,7 +366,7 @@
                     , mode: 'retrieveAddresses'
                     , maxresults: 1
                 };
-                geocoder.reverseGeocode(reverseGeocodingParameters, show_revgeocode_result, function (e) {
+                geocoder.reverseGeocode(reverseGeocodingParameters, show_geocode_result, function (e) {
                     alert(e);
                 });
             }
