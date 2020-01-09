@@ -32,13 +32,13 @@
     </div>
     <div id="map">
         <script type="text/javascript" charset="UTF-8">
-            var he_appid = 'JDuZcEECeUBXGkFT6zp9';
-            var he_appcode = 'pTa6-IjR6ElKf0kjAolO2A';
+            var he_appid = 'MdgrnOU2OsdYuPbPNz2t';
+            var he_appcode = 'jeXznopbGvE8KRhVK3wkMw';
             var platform = new H.service.Platform({
                 app_id: he_appid
                 , app_code: he_appcode
                 , useHTTPS: true
-                , useCIT: true
+                , useCIT: false
             });
             var geocoder = platform.getGeocodingService();
             var router = platform.getRoutingService();
@@ -257,7 +257,7 @@
             }
 
             function nearest_station_checker(input_loc, input_name) {
-                var gfe_url = 'https://cle.cit.api.here.com/2/search/proximity.json?layer_ids=GGR_COVERAGE_180815&proximity=' + input_loc[0] + ',' + input_loc[1] + '&app_id=' + he_appid + '&app_code=' + he_appcode;
+                var gfe_url = 'https://cle.api.here.com/2/search/proximity.json?layer_ids=GGR_JAN2020&proximity=' + input_loc[0] + ',' + input_loc[1] + '&app_id=' + he_appid + '&app_code=' + he_appcode;
                 var gfe_result = JSON.parse(httpGet(gfe_url));
                 var gfe_station_list = [];
                 if (gfe_result["geometries"].length > 0) {
@@ -378,7 +378,7 @@
             })
             var cleService = platform.getCustomLocationService();
             var ggr_gostations = new H.service.extension.customLocation.TileProvider(cleService, {
-                layerId: 'GGR_COVERAGE_180815'
+                layerId: 'GGR_JAN2020'
             }, {
                 resultType: H.service.extension.TileProvider.ResultType.POLYGON
                 , min: 10
@@ -450,7 +450,7 @@
                 ggr_isoline_group.removeAll();
             };
             var ggr_points = cleService.request(H.service.extension.customLocation.Service.EntryPoint.SEARCH_ALL, H.service.extension.customLocation.Service.EntryPointType.JSON, {
-                    layer_id: 'GGR_COVERAGE_180815'
+                    layer_id: 'GGR_JAN2020'
                 }, function (value) {
                     var geometries = value.geometries;
                     for (i = 0; i < geometries.length; i++) {
