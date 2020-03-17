@@ -3,7 +3,7 @@ Demo: https://aquawill.github.io/ev_station_finder_demo_here_js_api/
 
 Station data source from Gogoro: https://www.gogoro.com/tw/
 
-Powered by Leaflet and HERE Location Services:
+Powered by HERE Location Services:
 
 * HERE JavaScript API (Interactive Map + Map Tile)
     * https://developer.here.com/documentation/maps/topics/quick-start.html
