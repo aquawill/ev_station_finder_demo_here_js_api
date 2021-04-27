@@ -35,35 +35,34 @@
             var he_appid = 'MdgrnOU2OsdYuPbPNz2t';
             var he_appcode = 'jeXznopbGvE8KRhVK3wkMw';
             var platform = new H.service.Platform({
-                app_id: he_appid
-                , app_code: he_appcode
-                , useHTTPS: true
-                , useCIT: false
+                app_id: he_appid,
+                app_code: he_appcode,
+                useHTTPS: true,
+                useCIT: false
             });
             var geocoder = platform.getGeocodingService();
             var router = platform.getRoutingService();
             var pixelRatio = window.devicePixelRatio || 1;
             var defaultLayers = platform.createDefaultLayers({
-                tileSize: tile_size
-                , ppi: ppi
-            , });
+                tileSize: tile_size,
+                ppi: ppi,
+            });
             document.getElementById('searchbar').addEventListener('keypress', onSearch)
 
             function onSearch(e) {
                 var keyCode = null;
                 if (e.which) {
                     keyCode = e.which;
-                }
-                else if (e.keyCode) {
+                } else if (e.keyCode) {
                     keyCode = e.keyCode;
                 }
                 if (keyCode == 13) {
                     var geocoder_string = e.srcElement.value;
                     var geocodingParams = {
-                        searchText: geocoder_string
-                        , country: 'TWN'
+                        searchText: geocoder_string,
+                        country: 'TWN'
                     };
-                    geocoder.geocode(geocodingParams, show_geocode_result, function (e) {
+                    geocoder.geocode(geocodingParams, show_geocode_result, function(e) {
                         console.log(e);
                     });
                 }
@@ -78,18 +77,17 @@
             };
 
             function getURL(URL) {
-                return new Promise(function (resolve, reject) {
+                return new Promise(function(resolve, reject) {
                     var req = new XMLHttpRequest();
                     req.open('GET', URL, true);
-                    req.onload = function () {
+                    req.onload = function() {
                         if (req.status === 200) {
                             resolve(req.responseText);
-                        }
-                        else {
+                        } else {
                             reject(new Error(req.statusText));
                         }
                     };
-                    req.onerror = function () {
+                    req.onerror = function() {
                         reject(new Error(req.statusText));
                     };
                     req.send();
@@ -102,42 +100,42 @@
             function activate_cht_map(map, platform) {
                 var mapTileService = platform.getMapTileService({
                         type: 'traffic'
-                    })
-                    , chineseMapLayer = mapTileService.createTileLayer('traffictile', 'normal.day', pixelRatio === 1 ? 256 : 512, 'png8', {
-                        lg: 'cht'
-                        , ppi: ppi
-                        , pois: true
+                    }),
+                    chineseMapLayer = mapTileService.createTileLayer('traffictile', 'normal.day', pixelRatio === 1 ? 256 : 512, 'png8', {
+                        lg: 'cht',
+                        ppi: ppi,
+                        pois: true
                     });
                 map.setBaseLayer(chineseMapLayer);
             }
             var map = new H.Map(document.getElementById('map'), defaultLayers.normal.traffic, {
                 center: {
-                    lat: 25.040053
-                    , lng: 121.511976
-                }
-                , zoom: 14
-                , pixelRatio: pixelRatio
+                    lat: 25.040053,
+                    lng: 121.511976
+                },
+                zoom: 14,
+                pixelRatio: pixelRatio
             });
             var behavior = new H.mapevents.Behavior(new H.mapevents.MapEvents(map));
-            navigator.geolocation.getCurrentPosition(function (location) {
+            navigator.geolocation.getCurrentPosition(function(location) {
                 var gps_location_marker = new H.map.Circle({
-                    lat: location.coords.latitude
-                    , lng: location.coords.longitude
+                    lat: location.coords.latitude,
+                    lng: location.coords.longitude
                 }, 5, {
                     style: {
-                        strokeColor: 'rgba(245, 117, 249, 0.3)'
-                        , lineWidth: 1
-                        , fillColor: 'rgba(184, 197, 252, 0.5)'
+                        strokeColor: 'rgba(245, 117, 249, 0.3)',
+                        lineWidth: 1,
+                        fillColor: 'rgba(184, 197, 252, 0.5)'
                     }
                 });
                 var gps_location_marker_radius = new H.map.Circle({
-                    lat: location.coords.latitude
-                    , lng: location.coords.longitude
+                    lat: location.coords.latitude,
+                    lng: location.coords.longitude
                 }, location.coords.accuracy, {
                     style: {
-                        strokeColor: 'rgba(245, 117, 249, 0.3)'
-                        , lineWidth: 1
-                        , fillColor: 'rgba(250, 184, 252, 0.3)'
+                        strokeColor: 'rgba(245, 117, 249, 0.3)',
+                        lineWidth: 1,
+                        fillColor: 'rgba(250, 184, 252, 0.3)'
                     }
                 });
                 gps_location_marker_radius.setZIndex(0);
@@ -145,21 +143,21 @@
                 map.addObject(gps_location_marker_radius);
                 map.addObject(gps_location_marker);
                 map.setCenter({
-                    lat: location.coords.latitude
-                    , lng: location.coords.longitude
+                    lat: location.coords.latitude,
+                    lng: location.coords.longitude
                 });
                 rev_geocoder({
-                    lat: location.coords.latitude
-                    , lng: location.coords.longitude
+                    lat: location.coords.latitude,
+                    lng: location.coords.longitude
                 });
             });
             activate_cht_map(map, platform);
             var ui = H.ui.UI.createDefault(map, defaultLayers);
             ui.removeControl('mapsettings');
-            var ggr_isoline_group = new H.map.Group()
-                , ggr_marker_group = new H.map.Group()
-                , selected_station_group = new H.map.Group()
-                , ggr_route_group = new H.map.Group();
+            var ggr_isoline_group = new H.map.Group(),
+                ggr_marker_group = new H.map.Group(),
+                selected_station_group = new H.map.Group(),
+                ggr_route_group = new H.map.Group();
             map.addObject(ggr_isoline_group);
             map.addObject(ggr_marker_group);
             map.addObject(selected_station_group);
@@ -176,18 +174,18 @@
 
             function get_route(ori, dest, ori_name, dest_name) {
                 var routingParameters = {
-                    'mode': 'fastest;car;traffic:enabled;motorway:-3'
-                    , 'waypoint0': 'geo!' + ori[0] + ',' + ori[1]
-                    , 'waypoint1': 'geo!' + dest[0] + ',' + dest[1]
-                    , 'representation': 'display'
-                    , 'departure': 'now'
-                    , 'language': 'zh-TW'
-                    , 'consumptionmodel': 'default'
-                    , 'routeAttributes': 'summary,shape,legs,waypoints'
+                    'mode': 'fastest;car;traffic:enabled;motorway:-3',
+                    'waypoint0': 'geo!' + ori[0] + ',' + ori[1],
+                    'waypoint1': 'geo!' + dest[0] + ',' + dest[1],
+                    'representation': 'display',
+                    'departure': 'now',
+                    'language': 'zh-TW',
+                    'consumptionmodel': 'default',
+                    'routeAttributes': 'summary,shape,legs,waypoints'
                 };
                 var turn_guides = '<ol>';
                 var route, routeShape, startPoint, endPoint, linestring, maneuvers, legs, summary, ori_bubble_info;
-                var onResult = function (result) {
+                var onResult = function(result) {
                     if (result.response) {
                         if (result.response.route) {
                             route = result.response.route[0];
@@ -205,7 +203,7 @@
                             bubble.setContent('<span style="color: #EEEEEE; font-size: 14px">所在地：<br>' + ori_name + '<br>最近的GoStation：<br>' + dest_name + '</span><br><span style="color: #EEEEEE; font-size: 12px">' + summary + '</span>');
                             routeShape = route.shape;
                             linestring = new H.geo.LineString();
-                            routeShape.forEach(function (point) {
+                            routeShape.forEach(function(point) {
                                 var parts = point.split(',');
                                 linestring.pushLatLngAlt(parts[0], parts[1]);
                             });
@@ -214,22 +212,22 @@
                             routeLine = new H.map.Polyline(linestring, {
                                 style: {
                                     lineWidth: 10
-                                }
-                                , arrows: {
-                                    fillColor: 'white'
-                                    , frequency: 2
-                                    , width: 0.8
-                                    , length: 0.7
+                                },
+                                arrows: {
+                                    fillColor: 'white',
+                                    frequency: 2,
+                                    width: 0.8,
+                                    length: 0.7
                                 }
                             });
                             routeLine.setZIndex(20);
-                            routeLine.addEventListener('tap', function () {
+                            routeLine.addEventListener('tap', function() {
                                 ggr_route_group.removeAll();
                                 purge_bubble()
                             })
                             var startMarker = new H.map.Marker({
-                                lat: startPoint.latitude
-                                , lng: startPoint.longitude
+                                lat: startPoint.latitude,
+                                lng: startPoint.longitude
                             });
                             /*
                             startMarker.addEventListener('tap', function () {
@@ -246,12 +244,11 @@
                             map.setZoom(Math.round(camera_data.zoom - 1), true);
                             map.setCenter(camera_data.position, true);
                         }
-                    }
-                    else {
+                    } else {
                         bubble.setContent('<span style="color: #EEEEEE; font-size: 14px">所在地：<br>' + ori_name + '</span><br><span style="color: #EEEEEE; font-size: 12px">此地點可能不在GoStation服務範圍內，或位在Gogoro無法行駛的區域。</span>');
                     }
                 };
-                router.calculateRoute(routingParameters, onResult, function (error) {
+                router.calculateRoute(routingParameters, onResult, function(error) {
                     console.log(error);
                 });
             }
@@ -290,8 +287,7 @@
                     if (result_list.length > 0) {}
                     if (result_list.length > 5) {
                         candidate_list_length = 5
-                    }
-                    else {
+                    } else {
                         candidate_list_length = result_list.length
                     }
                     for (i = 0; i < candidate_list_length; i++) {
@@ -306,8 +302,7 @@
                         var cost_factor;
                         if (matrix_result["response"]["matrixEntry"][i]["status"] != 'failed') {
                             cost_factor = matrix_result["response"]["matrixEntry"][i]["summary"]["costFactor"];
-                        }
-                        else {
+                        } else {
                             cost_factor = 0
                         }
                         closest_dest_list.push([destination_index, cost_factor]);
@@ -324,8 +319,7 @@
                     var closest_dest = result_list[closest_dest_index];
                     var route_result = get_route(input_loc, closest_dest[3].split(','), input_name, closest_dest[1]);
                     return [closest_dest, route_result];
-                }
-                else {
+                } else {
                     ggr_route_group.removeAll();
                     return null;
                 }
@@ -338,39 +332,37 @@
                     var closest_dest = nearest_station_checker([location.Location.DisplayPosition.Latitude, location.Location.DisplayPosition.Longitude], location.Location.Address.Label)
                     if (closest_dest) {
                         bubble = new H.ui.InfoBubble({
-                            lat: location.Location.DisplayPosition.Latitude
-                            , lng: location.Location.DisplayPosition.Longitude
+                            lat: location.Location.DisplayPosition.Latitude,
+                            lng: location.Location.DisplayPosition.Longitude
                         }, {
                             content: '<p><span style="color: #EEEEEE; font-size: 14px">所在地：' + location.Location.Address.Label + '</p></span>'
                         });
                         ui.addBubble(bubble);
-                    }
-                    else {
+                    } else {
                         bubble = new H.ui.InfoBubble({
-                            lat: location.Location.DisplayPosition.Latitude
-                            , lng: location.Location.DisplayPosition.Longitude
+                            lat: location.Location.DisplayPosition.Latitude,
+                            lng: location.Location.DisplayPosition.Longitude
                         }, {
                             content: '<span style="color: #EEEEEE; font-size: 14px">所在地：<br>' + location.Location.Address.Label + '</span><br><span style="color: #EEEEEE; font-size: 12px">此地點可能不在GoStation服務範圍內，或位在Gogoro無法行駛的區域。</span>'
                         });
                         ui.addBubble(bubble);
                     }
-                }
-                else {
+                } else {
                     window.alert('查無此地址資料，請再次嘗試。');
                 }
             };
 
             function rev_geocoder(loc) {
                 var reverseGeocodingParameters = {
-                    prox: loc.lat + ',' + loc.lng + ',100'
-                    , mode: 'retrieveAddresses'
-                    , maxresults: 1
+                    prox: loc.lat + ',' + loc.lng + ',100',
+                    mode: 'retrieveAddresses',
+                    maxresults: 1
                 };
-                geocoder.reverseGeocode(reverseGeocodingParameters, show_geocode_result, function (e) {
+                geocoder.reverseGeocode(reverseGeocodingParameters, show_geocode_result, function(e) {
                     alert(e);
                 });
             }
-            map.addEventListener('contextmenu', function (evt) {
+            map.addEventListener('contextmenu', function(evt) {
                 ggr_route_group.removeAll();
                 purge_bubble();
                 var coord = map.screenToGeo(evt.viewportX, evt.viewportY);
@@ -380,8 +372,8 @@
             var ggr_gostations = new H.service.extension.customLocation.TileProvider(cleService, {
                 layerId: 'GGR_JAN2020'
             }, {
-                resultType: H.service.extension.TileProvider.ResultType.POLYGON
-                , min: 10
+                resultType: H.service.extension.TileProvider.ResultType.POLYGON,
+                min: 10
             });
             /*
             var ggr_layer = new H.map.layer.TileLayer(ggr_gostations, {
@@ -392,8 +384,8 @@
             function img_icon(url, center) {
                 var icon_object = new H.map.Icon(url, {
                     anchor: {
-                        x: center
-                        , y: center
+                        x: center,
+                        y: center
                     }
                 });
                 return icon_object;
@@ -408,21 +400,21 @@
                 selected_station_group.removeAll();
                 ggr_isoline_group.removeAll();
                 if (ggr_route_group.getObjects().length == 0) {
-                    var isoline_wkt = evt.target.getData().geometry
-                        , isoline_geometry = H.util.wkt.toGeometry(isoline_wkt)
-                        , isoline_polygon = new H.map.Polygon(isoline_geometry);
-                    isoline_polygon.addEventListener('tap', function (e) {
+                    var isoline_wkt = evt.target.getData().geometry,
+                        isoline_geometry = H.util.wkt.toGeometry(isoline_wkt),
+                        isoline_polygon = new H.map.Polygon(isoline_geometry);
+                    isoline_polygon.addEventListener('tap', function(e) {
                         ggr_marker_group.setVisibility(true);
                         selected_station_group.removeAll();
                         ggr_isoline_group.removeAll();
                     });
                     ggr_isoline_group.addObject(isoline_polygon);
                     selected_ggr_station_marker = new H.map.Marker({
-                        lat: evt.target.getData().lat
-                        , lng: evt.target.getData().lng
+                        lat: evt.target.getData().lat,
+                        lng: evt.target.getData().lng
                     }, {
-                        icon: img_icon('https://storage.googleapis.com/ww_storage/battery.png', 16)
-                    , });
+                        icon: img_icon('https://raw.githubusercontent.com/aquawill/ev_station_finder_demo_here_js_api/master/img/power.png', 16),
+                    });
                     selected_ggr_station_marker.addEventListener('tap', selectedMarkerOnClick);
                     selected_station_group.addObject(selected_ggr_station_marker);
                     ggr_marker_group.setVisibility(false);
@@ -451,32 +443,32 @@
             };
             var ggr_points = cleService.request(H.service.extension.customLocation.Service.EntryPoint.SEARCH_ALL, H.service.extension.customLocation.Service.EntryPointType.JSON, {
                     layer_id: 'GGR_JAN2020'
-                }, function (value) {
+                }, function(value) {
                     var geometries = value.geometries;
                     for (i = 0; i < geometries.length; i++) {
-                        var latlon = geometries[i].attributes.LATLON
-                            , lat = latlon.split(',')[0]
-                            , lng = latlon.split(',')[1]
-                            , name = lon = geometries[i].attributes.NAME
-                            , addr = geometries[i].attributes.ADDR
-                            , id = geometries[i].attributes.ID
-                            , wkt = geometries[i].geometry
-                            , ggr_station_marker = new H.map.Marker({
-                                lat: lat
-                                , lng: lng
+                        var latlon = geometries[i].attributes.LATLON,
+                            lat = latlon.split(',')[0],
+                            lng = latlon.split(',')[1],
+                            name = lon = geometries[i].attributes.NAME,
+                            addr = geometries[i].attributes.ADDR,
+                            id = geometries[i].attributes.ID,
+                            wkt = geometries[i].geometry,
+                            ggr_station_marker = new H.map.Marker({
+                                lat: lat,
+                                lng: lng
                             }, {
-                                icon: img_icon('https://storage.googleapis.com/ww_storage/battery.png', 16)
-                            , });
+                                icon: img_icon('https://raw.githubusercontent.com/aquawill/ev_station_finder_demo_here_js_api/master/img/power_16.png', 16),
+                            });
                         ggr_station_marker.setData({
-                            html: '<h4>' + name + '</h4><p><span style="color: #999999; font-size: 14px">' + addr + '</p>'
-                            , geometry: wkt
-                            , lat: lat
-                            , lng: lng
+                            html: '<h4>' + name + '</h4><p><span style="color: #999999; font-size: 14px">' + addr + '</p>',
+                            geometry: wkt,
+                            lat: lat,
+                            lng: lng
                         });
                         ggr_marker_group.addObject(ggr_station_marker);
                         ggr_station_marker.addEventListener('tap', select_station, false);
                     }
-                }, function () {
+                }, function() {
                     console.log('cle request error');
                 })
                 //map.addEventListener('tap', selectedMarkerOnClick)
@@ -485,19 +477,17 @@
                 view_port.resize();
             }
             var bounds = new H.geo.Rect(26.3841, 117.9841, 21.8967, 122.0069);
-            map.getViewModel().addEventListener('sync', function () {
+            map.getViewModel().addEventListener('sync', function() {
                 var center = map.getCenter();
                 if (!bounds.containsPoint(center)) {
                     if (center.lat > bounds.getTop()) {
                         center.lat = bounds.getTop();
-                    }
-                    else if (center.lat < bounds.getBottom()) {
+                    } else if (center.lat < bounds.getBottom()) {
                         center.lat = bounds.getBottom();
                     }
                     if (center.lng < bounds.getLeft()) {
                         center.lng = bounds.getLeft();
-                    }
-                    else if (center.lng > bounds.getRight()) {
+                    } else if (center.lng > bounds.getRight()) {
                         center.lng = bounds.getRight();
                     }
                     map.setCenter(center);
